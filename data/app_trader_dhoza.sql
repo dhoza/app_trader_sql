@@ -1,4 +1,4 @@
-select * from app_store_apps
+gitselect * from app_store_apps
 SELECT * FROM PLAY_STORE_APPS;
 
 -- getting names in common for both tables and reviews in each #499
