@@ -5,6 +5,13 @@ Assumptions about the project's objectives:
 		- make sure rating is high in both stores?
 - preference to work with apps in both stores
 - probably want to spend less to get the rights (i.e. not necessarily 10,000 times the price of the app)
+
+--------------------------
+Things to include in query magic:
+- review_counts > x
+- DISTINCT names?
+- difference in ratings between store is less or equal to X (ensure both versions of the app have staying power)
+- price * 10,000 if app is not free, to determine cost
 */
 
 --Starting with a UNION
@@ -26,6 +33,7 @@ ON p.name=a.name
 where p.rating IS NOT NULL 
 AND a.rating IS NOT NULL;
 
+----------------------
 /*Getting information about ratings and review counts from both tables*/
 --Play Store
 Select MIN(rating) from play_store_apps where rating IS NOT NULL;
@@ -51,3 +59,13 @@ Select COUNT(name) from play_store_apps;
 --10840
 Select COUNT(name) from app_store_apps;
 --7197
+
+-------------------------------------
+--Comparing prices between stores
+SELECT a.price as app_store, LTRIM(p.price,'$') as play_store
+from app_store_apps as a
+INNER JOIN
+play_store_apps as p
+ON p.name=a.name
+WHERE a.price > 0
+--AND CAST(p.price as float) > 0;  --Note that this CAST does not work
