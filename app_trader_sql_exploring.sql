@@ -89,7 +89,7 @@ GROUP BY a.name, a.rating, p.rating;
 	GROUP BY a.name, a.rating, p.rating;*/
 
 ----------------------------------------------------
-	
+--Apps with small difference in ratings between stores, where ratings in both stores are above or equal to 4.  We assume this ensures longesvity based on app quality.
 SELECT DISTINCT a.name, a.rating AS app_store_rating, p.rating AS play_store_rating, CAST(sub.difference as float)
 FROM (SELECT a.name AS subname, CAST(a.rating as float) - CAST(p.rating as float) AS difference
 	FROM app_store_apps AS a
@@ -99,8 +99,42 @@ INNER JOIN app_store_apps AS a
 ON a.name=sub.subname
 INNER JOIN play_store_apps as p
 ON a.name=p.name
-WHERE a.rating > 4
-AND p.rating > 4
+--Limit what we're looking at to apps with good reviews in both stores
+WHERE a.rating >= 4
+AND p.rating >= 4
 AND sub.difference BETWEEN -.2 AND .2
-ORDER BY difference ASC
+ORDER BY p.rating DESC
+--because Play store has more reviews and larger audience, order by play_store_rating
 ;
+
+----------------------------------Calculating the price for AppTrader to buy marketing rights
+--------App store
+SELECT name, price, CASE
+WHEN price = 0 THEN 10000
+WHEN price > 0 THEN price*10000
+ELSE 0 END AS calc_price
+FROM app_store_apps
+ORDER BY price ASC;
+
+--------Play Store
+/*doesn't cast as float, probably need to do the CASE somewhere else
+SELECT name, CAST(REPLACE(price,'$','')AS float), CASE
+WHEN price = 0 THEN 10000
+WHEN price > 0 THEN price*10000
+ELSE 0 END AS calc_price
+FROM play_store_apps
+ORDER BY price ASC; 
+*/
+
+/*
+WITH play_store_price AS 
+	(SELECT name, CAST(REPLACE(price,'$','')AS float) from play_store_apps)
+--), app_store_price AS
+--	(SELECT name, price) from app_store_apps
+SELECT p.price, CASE
+WHEN p.price = 0 THEN 10000
+WHEN p.price > 0 THEN p.price*10000
+ELSE 0 END AS calc_price
+FROM play_store_price AS p
+ORDER BY price ASC;
+*/
