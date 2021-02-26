@@ -62,10 +62,45 @@ Select COUNT(name) from app_store_apps;
 
 -------------------------------------
 --Comparing prices between stores
-SELECT a.price as app_store, LTRIM(p.price,'$') as play_store
+SELECT a.name, a.price as app_store, LTRIM(p.price,'$') as play_store
 from app_store_apps as a
 INNER JOIN
 play_store_apps as p
 ON p.name=a.name
-WHERE a.price > 0
---AND CAST(p.price as float) > 0;  --Note that this CAST does not work
+WHERE a.price > 0;
+
+-------
+--Comparing ratings between stores
+SELECT a.name AS name, a.rating AS app_store_rating, p.rating AS play_store_rating, CAST(a.rating as float) - CAST(p.rating as float) AS difference
+FROM app_store_apps AS a
+INNER JOIN play_store_apps AS p
+ON a.name=p.name
+WHERE a.rating > 4
+AND p.rating > 4
+GROUP BY a.name, a.rating, p.rating;
+
+--Selecting names where difference between rating is less than or equal to .5
+----Start by getting a differences in ratings as a query output:
+/*SELECT a.name AS name, a.rating AS app_store_rating, p.rating AS play_story_rating, CAST(a.rating as float) - CAST(p.rating as float) AS difference
+	FROM app_store_apps AS a
+	INNER JOIN play_store_apps AS p
+	ON a.name=p.name
+	WHERE difference <= .2
+	GROUP BY a.name, a.rating, p.rating;*/
+
+----------------------------------------------------
+	
+SELECT DISTINCT a.name, a.rating AS app_store_rating, p.rating AS play_store_rating, CAST(sub.difference as float)
+FROM (SELECT a.name AS subname, CAST(a.rating as float) - CAST(p.rating as float) AS difference
+	FROM app_store_apps AS a
+	INNER JOIN play_store_apps AS p
+	ON a.name=p.name) as sub
+INNER JOIN app_store_apps AS a
+ON a.name=sub.subname
+INNER JOIN play_store_apps as p
+ON a.name=p.name
+WHERE a.rating > 4
+AND p.rating > 4
+AND sub.difference BETWEEN -.2 AND .2
+ORDER BY difference ASC
+;
