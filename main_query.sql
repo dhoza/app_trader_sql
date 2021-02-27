@@ -1,4 +1,4 @@
-/*This query identifies app with high ratings across both stores, including the content rating, category/genre, and cost to purchase the marketing rights
+/*This query identifies apps with high ratings across both stores, including the content rating, category/genre, and cost to purchase the marketing rights
 */ 
 WITH app AS
 (SELECT
