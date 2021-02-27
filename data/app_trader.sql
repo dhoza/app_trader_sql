@@ -1,5 +1,5 @@
 /*apps that cost $0.00 - $1.00*/
-SELECT a.name, a.price, CAST(subquery.price AS float)
+SELECT a.name, a.price, CAST(subquery.price AS float) AS play_store_price
 FROM
 	(SELECT RTRIM(LTRIM(price, '$')) AS price, name
 	FROM play_store_apps) as subquery
@@ -17,6 +17,24 @@ INNER JOIN app_store_apps as a
 ON subquery.name = a.name
 /* apps with different prices in different stores that are 0 - 1 dollar in play store*/
 WHERE CAST(subquery.price AS float) >= 0 AND CAST(subquery.price AS float) <= 1.00 AND a.price != CAST(subquery.price AS float);
+
+/*apps that cost $0.00 - $1.00*/
+SELECT a.name, a.price, CAST(subquery.price AS float)
+FROM
+	(SELECT RTRIM(LTRIM(price, '$')) AS price, name
+	FROM play_store_apps) as subquery
+INNER JOIN app_store_apps as a
+ON subquery.name = a.name
+/* apps with different prices in different stores that are 0 - 1 dollar in play store*/
+WHERE CAST(subquery.price AS float) >= 0 AND CAST(subquery.price AS float) <= 1.00 AND a.price >= 0 AND a.price <= 1.00;
+
+SELECT a.name, a.price, CAST(subquery.price AS float)
+FROM
+	(SELECT RTRIM(LTRIM(price, '$')) AS price, name
+	FROM play_store_apps) as subquery
+INNER JOIN app_store_apps as a
+ON subquery.name = a.name;
+/* apps with different prices in different stores that are 0 - 1 dollar in play store*/
 
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -63,3 +81,8 @@ ORDER BY review_count DESC;
 SELECT name, review_count, rating
 FROM play_store_apps
 ORDER BY review_count DESC;
+
+/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+SELECT CAST(price AS float)
+FROM app_store_apps;
