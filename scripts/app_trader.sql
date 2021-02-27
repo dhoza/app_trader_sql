@@ -1,3 +1,10 @@
+-- General data from both tables -- 
+SELECT *
+FROM app_store_apps;
+
+SELECT *
+FROM play_store_apps;
+
 -- Overall comparison between shared apps -- 
 
 SELECT DISTINCT(a.name), p.name, a.price, p.price, a.primary_genre,
@@ -8,7 +15,7 @@ FULL OUTER JOIN play_store_apps AS p
 ON a.name = p.name
 WHERE a.name IS NOT null AND p.name IS NOT null;
 
-
+--------- Debbie: FINAL EVALUATION USING CTEs-329 rows--getting extra column of price app trader will pay for app=purchase price * 10K, ordered by importance to app trader---
 WITH app AS
 (SELECT
 	name,avg(rating) as app_avg_rating,round(SUM(cast(review_count as int)),2) as app_total_reviews,round(avg(price),2) as app_avg_price
@@ -27,4 +34,53 @@ FROM app as a
 INNER JOIN play as p
 ON a.name = p.name
 ORDER BY app_avg_rating DESC,play_avg_rating DESC,all_total_reviews DESC,app_avg_price DESC;
+
+-- Expected profits from both app stores -------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- app store -- 
+SELECT primary_genre, COUNT(primary_genre), ROUND(AVG(
+CASE WHEN price < 1 
+	THEN 1500*(12*(1+2*rating)) - 10000 
+ELSE 1500*(12*(1+2*rating)) - 10000 * price 
+	END),2) as avg_expected_profit
+FROM app_store_apps
+GROUP BY primary_genre
+ORDER BY COUNT(primary_genre) DESC;
+
+-- play store -- 
+SELECT category, COUNT(category), ROUND(AVG(
+CASE WHEN CAST(TRIM(REPLACE(price, '$', '')) AS numeric) < 1 
+	THEN 1500*(12*(1+2*CAST(rating AS numeric))) - 10000
+WHEN CAST(TRIM(REPLACE(price, '$', '')) AS numeric) >= 1 
+	THEN 1500*(12*(1+2*CAST(rating AS numeric))) - 10000 * CAST(TRIM(REPLACE(price, '$', '')) AS numeric) 
+	END),2) as avg_expected_profit
+FROM play_store_apps
+WHERE rating IS NOT NULL
+GROUP BY category
+ORDER BY COUNT(category) DESC;
+/* Alternatively order by count of genres */
+
+-- Most expensive apps -- 
+
+-- app store -- 
+SELECT name, primary_genre, price
+FROM app_store_apps AS a
+GROUP BY a.name, a.primary_genre, a.price
+ORDER BY price DESC
+
+-- play store -- 
+SELECT name, genres, (CAST(REPLACE(price,'$','') AS numeric)) As price
+FROM play_store_apps AS p
+GROUP BY p.name, p.genres, p.price
+ORDER BY price DESC;
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+SELECT *
+FROM play_store_apps
+WHERE category = 'GAME';
+
+
+
+
 
