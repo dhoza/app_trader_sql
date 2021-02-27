@@ -33,34 +33,41 @@ ON p.name=a.name
 where p.rating IS NOT NULL 
 AND a.rating IS NOT NULL;
 
-----------------------
-/*Getting information about ratings and review counts from both tables*/
---Play Store
-Select MIN(rating) from play_store_apps where rating IS NOT NULL;
---1
-Select COUNT(rating) from play_store_apps where rating = 1;
---16
+---------------------------------------------------------------------------------------
+/*Getting information about ratings and review counts from both app stores*/
 
---App Store
-Select MIN(rating) from app_store_apps where rating != 0;
---1
-Select COUNT(rating) from app_store_apps where rating = 1;
---44
+--How many apps have reviews bewtween 1 and 2 stars?
+---Play Store
+Select COUNT(name) from play_store_apps where rating BETWEEN 1 AND 2;
+--------68
+---App Store
+Select COUNT(name) from app_store_apps where rating BETWEEN 1 AND 2;
+--------206
 
---How many reviews are in each store? (Could focus where there are the most reviews?)
+--How many reviews are in each store?
+---Play Store
 Select SUM(review_count) from play_store_apps;
---4814617393
-Select SUM(review_count::integer) from app_store_apps;
---92790253
+-------4814617393
+---App Store
+Select SUM(review_count::numeric) from app_store_apps;
+-------92790253
 
-/*How many apps are in each store? (Mostly just curious, as expected revenue is not dependent on store, 
-but there might be gems in the Play store which has apps that are not also in the App store)*/
-Select COUNT(name) from play_store_apps;
---10840
-Select COUNT(name) from app_store_apps;
---7197
+--How many apps are in each store?
+---Play Store
+SELECT count(name) from play_store_apps;
+------10840
+---App store
+SELECT count(name) from app_store_apps;
+-------7197
 
--------------------------------------
+/*Percentage of 1-2star apps per store:
+--Play Store
+	68/10840 = 0.627%
+--App Store
+	206/7197 = 2.86%
+*/
+
+--------------------------------------------------------------------
 --Comparing prices between stores
 SELECT a.name, a.price as app_store, LTRIM(p.price,'$') as play_store
 from app_store_apps as a
@@ -90,8 +97,8 @@ GROUP BY a.name, a.rating, p.rating;
 
 ----------------------------------------------------
 --Apps with small difference in ratings between stores, where ratings in both stores are above or equal to 4.  We assume this ensures longesvity based on app quality.
-SELECT DISTINCT a.name, a.rating AS app_store_rating, p.rating AS play_store_rating, CAST(sub.difference as float)
-FROM (SELECT a.name AS subname, CAST(a.rating as float) - CAST(p.rating as float) AS difference
+SELECT DISTINCT a.name, a.rating AS app_store_rating, p.rating AS play_store_rating, CAST(sub.difference as numeric)
+FROM (SELECT a.name AS subname, CAST(a.rating as numeric) - CAST(p.rating as numeric) AS difference
 	FROM app_store_apps AS a
 	INNER JOIN play_store_apps AS p
 	ON a.name=p.name) as sub
@@ -110,31 +117,25 @@ ORDER BY p.rating DESC
 ----------------------------------Calculating the price for AppTrader to buy marketing rights
 --------App store
 SELECT name, price, CASE
-WHEN price = 0 THEN 10000
+WHEN price < 1 THEN 10000
 WHEN price > 0 THEN price*10000
 ELSE 0 END AS calc_price
 FROM app_store_apps
 ORDER BY price ASC;
 
 --------Play Store
-/*doesn't cast as float, probably need to do the CASE somewhere else
-SELECT name, CAST(REPLACE(price,'$','')AS float), CASE
-WHEN price = 0 THEN 10000
-WHEN price > 0 THEN price*10000
-ELSE 0 END AS calc_price
-FROM play_store_apps
-ORDER BY price ASC; 
-*/
-
-/*
-WITH play_store_price AS 
-	(SELECT name, CAST(REPLACE(price,'$','')AS float) from play_store_apps)
---), app_store_price AS
---	(SELECT name, price) from app_store_apps
-SELECT p.price, CASE
-WHEN p.price = 0 THEN 10000
-WHEN p.price > 0 THEN p.price*10000
-ELSE 0 END AS calc_price
-FROM play_store_price AS p
-ORDER BY price ASC;
-*/
+WITH clean_price AS
+	(SELECT play_store_apps.name,
+	REPLACE(price,'$','') AS new_play_price
+	from play_store_apps),
+cleaner_price AS
+	(SELECT name, CAST(clean_price.new_play_price AS float) AS cleanest_price from clean_price)
+SELECT DISTINCT(c.name),
+CASE WHEN cp.cleanest_price < 1 THEN 10000
+	WHEN cp.cleanest_price > 0 THEN cp.cleanest_price*10000
+	ELSE 0 END AS calc_price
+FROM clean_price AS c
+JOIN cleaner_price AS cp
+ON c.name=cp.name
+ORDER BY calc_price ASC;
+	
