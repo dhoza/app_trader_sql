@@ -54,7 +54,7 @@ FROM app_store_apps
 FROM play_store_apps
  GROUP BY name,genres,content_rating
 )
-SELECT a.name,p.genres,p.content_rating,round(a.app_avg_rating,2) as app_avg_rating ,round(p.play_avg_rating,2) as play_avg_rating,trunc(a.app_total_reviews) as app_all_reviews,trunc(p.play_total_reviews) as play_all_reviews,TRUNC((app_total_reviews+play_total_reviews)/2) as all_total_reviews,a.app_avg_price,p.play_avg_price,
+SELECT a.name,p.genres, p.content_rating,round(a.app_avg_rating,2) as app_avg_rating ,round(p.play_avg_rating,2) as play_avg_rating,trunc(a.app_total_reviews) as app_all_reviews,trunc(p.play_total_reviews) as play_all_reviews,TRUNC((app_total_reviews+play_total_reviews)/2) as all_total_reviews,a.app_avg_price,p.play_avg_price,
 	CASE WHEN app_avg_price <= 1.00 THEN 10000
 		WHEN app_avg_price >1.00 THEN app_avg_price*10000 END AS App_trader_purchase_price
 FROM app as a
@@ -62,16 +62,66 @@ INNER JOIN play as p
 ON a.name = p.name
 ORDER BY app_avg_rating DESC,play_avg_rating DESC,all_total_reviews DESC,app_avg_price DESC;
 
---Debbie's Query--
+--Debbie's Query w/TOP 10 apps--
 
 Select a.name, p.name, a.content_rating, p.content_rating
 FROM app_store_apps as a
 INNER JOIN play_store_apps as p
-ON a.content_rating = p.content_rating
-ORDER BY a.content_rating,p.content_rating desc
+ON a.name = p.name
+ORDER BY a.content_rating,p.content_rating desc;
 
---------
+--Different ratings in each store--
 
+SELECT
+	(SELECT COUNT(content_rating)
+	FROM app_store_apps
+	WHERE content_rating = '4+')AS appover4_playeveryone,
+	(SELECT COUNT(content_rating) 
+	FROM app_store_apps
+	WHERE content_rating = '9+')AS appover9_playover10,
+	(SELECT COUNT(content_rating) 
+	FROM app_store_apps
+	WHERE content_rating = '12+')AS appover12_playteen,
+	(SELECT COUNT(content_rating) 
+	FROM app_store_apps
+	WHERE content_rating = '17+') AS appover17_playmature17
+FROM app_store_apps
+UNION
+SELECT
+	(SELECT COUNT(content_rating)
+	FROM play_store_apps
+	WHERE content_rating = 'Everyone') AS appover4_playeveryone,
+	(SELECT COUNT(content_rating) 
+	FROM play_store_apps
+	WHERE content_rating = 'Everyone 10+') AS appover9_playover10,
+	(SELECT COUNT(content_rating) 
+	FROM play_store_apps
+	WHERE content_rating = 'Teen') AS appover12_playteen,
+	(SELECT COUNT(content_rating) 
+	FROM play_store_apps
+	WHERE content_rating = 'Mature 17+') AS appover17_playmature17
+FROM play_store_apps
 
+--content_rating by category for each store--
 
+WITH app AS
+(SELECT
+	name,content_rating,avg(rating) as app_avg_rating,round(SUM(cast(review_count as int)),2) as app_total_reviews,round(avg(price),2) as app_avg_price
+FROM app_store_apps
+ GROUP BY name, content_rating
+), play as
+(SELECT
+	name,genres,content_rating,avg(rating) as play_avg_rating,round(SUM(cast(review_count as int)),2) as play_total_reviews,avg(CAST(REPLACE(price,'$','')AS float)) as play_avg_price
+FROM play_store_apps
+ GROUP BY name,genres,content_rating
+)
+SELECT a.name,p.genres,a.content_rating, p.content_rating, round(a.app_avg_rating,2) as app_avg_rating ,round(p.play_avg_rating,2) as play_avg_rating,trunc(a.app_total_reviews) as app_all_reviews,trunc(p.play_total_reviews) as play_all_reviews,TRUNC((app_total_reviews+play_total_reviews)/2) as all_total_reviews,a.app_avg_price,p.play_avg_price,
+	CASE WHEN app_avg_price <= 1.00 THEN 10000
+		WHEN app_avg_price >1.00 THEN app_avg_price*10000 END AS App_trader_purchase_price
+FROM app as a
+INNER JOIN play as p
+ON a.name = p.name
+ORDER BY app_avg_rating DESC,play_avg_rating DESC,all_total_reviews DESC,app_avg_price DESC;
+
+--QUERY Showing content_rating in both stores--
 
