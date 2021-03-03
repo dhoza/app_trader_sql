@@ -125,3 +125,18 @@ ORDER BY app_avg_rating DESC,play_avg_rating DESC,all_total_reviews DESC,app_avg
 
 --QUERY Showing content_rating in both stores--
 
+SELECT category, COUNT(category), ROUND(AVG(
+CASE WHEN CAST(TRIM(REPLACE(price, '$', '')) AS numeric) < 1 
+	THEN 1500*(12*(1+2*CAST(rating AS numeric))) - 10000
+WHEN CAST(TRIM(REPLACE(price, '$', '')) AS numeric) >= 1 
+	THEN 1500*(12*(1+2*CAST(rating AS numeric))) - 10000 * CAST(TRIM(REPLACE(price, '$', '')) AS numeric) 
+	END),2) as avg_expected_profit
+FROM play_store_apps
+WHERE rating IS NOT NULL
+GROUP BY category
+ORDER BY avg_expected_profit DESC;
+
+--AVG Expected Profit--
+
+
+
